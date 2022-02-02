@@ -3,16 +3,8 @@
   <img src="assets/imgs/logout.svg" class="icon ms-3" (click)="logout()">
 </a>
 <div class="page-container">
-  <app-navbar *ngIf="user"></app-navbar>
-  <ul class="list-group shared-canvas" *ngIf="sharedCanvas.length || (user && user.uid !== canvasId)">
-    <li class="list-group-item" [ngClass]="{'active': user.uid === canvasId}" (click)="selectCanvas(user.uid)">{{ user.email }}</li>
-    <li class="list-group-item" *ngFor="let user of sharedCanvas" [ngClass]="{'active': user.uid === canvasId}" (click)="selectCanvas(user.uid)">{{ user.email }}</li>
-  </ul>
-  
-  <canvas id="canvas"></canvas>
-  
   <div class="list-group canvas-options">
-      <button type="button" class="list-group-item list-group-item-action" (click)="clearCanvas()">CLEAR</button>
+      <button type="button" class="list-group-item list-group-item-action" (click)="clearCanvas()">Clear</button>
       <input type="color" class="form-control form-control-color color-input" [(ngModel)]="color" (change)="handleColor()">
       <input class="form-control" type="file" (change)="handleImage($event)" accept="image/*">
       <div class="row mt-2 mx-0" *ngIf="canvasId === user?.uid">
@@ -26,5 +18,13 @@
       <small *ngIf="shareEmailError" class="form-text text-danger">
         {{ shareEmailError }}
       </small>
-    </div>
+  </div>
+  <ul class="list-group shared-canvas" *ngIf="sharedCanvas.length || (user && user.uid !== canvasId)">
+    <li class="list-group-item" [ngClass]="{'active': user.uid === canvasId}" (click)="selectCanvas(user.uid)">{{ user.email }}</li>
+    <li class="list-group-item" *ngFor="let user of sharedCanvas" [ngClass]="{'active': user.uid === canvasId}" (click)="selectCanvas(user.uid)">{{ user.email }}</li>
+  </ul>
+  
+  <canvas id="canvas"></canvas>
+  
+  
 </div>

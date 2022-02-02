@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { AngularFireAuth } from '@angular/fire/compat/auth';
 import firebase from 'firebase/compat/app';
+import { AngularFireAuth } from '@angular/fire/compat/auth';
 
 
 @Injectable({
@@ -10,15 +10,15 @@ export class AuthService {
 
   constructor(private afauth: AngularFireAuth) { }
 
-  async signinWithGoogle() {
+  async signin() {
     return await this.afauth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => console.error(e));
+  }
+
+  signout() {
+    this.afauth.signOut();
   }
 
   getUser() {
     return this.afauth.authState;
-  }
-
-  logout() {
-    this.afauth.signOut();
   }
 }

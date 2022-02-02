@@ -1,9 +1,8 @@
 import { AfterViewInit, Component } from '@angular/core';
 import { AngularFireDatabase, AngularFireObject } from '@angular/fire/compat/database';
-import { ActivatedRoute, Params } from '@angular/router';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 import { fabric } from 'fabric';
 import { AuthService } from 'src/app/services/auth.service';
-import { PageService } from 'src/app/services/page.service';
 
 @Component({
   selector: 'app-fabriccanvas',
@@ -27,16 +26,16 @@ export class FabricCanvasComponent implements AfterViewInit {
 
   constructor(
     public authService: AuthService,
-    public db: AngularFireDatabase,
-    public pageService: PageService,
+    public afDb: AngularFireDatabase,
     public activatedRoute: ActivatedRoute,
+    public router: Router
   ) {
     const subscription = this.authService.getUser().subscribe(res => this.user = res);
     this.subscriptions.push(subscription);
 
     const routeSubscription = this.activatedRoute.params.subscribe((params: Params) => {
       this.canvasId = params.id;
-      this.dbCanvasRef = this.db.object(this.canvasId);
+      this.dbCanvasRef = this.afDb.object(this.canvasId);
       this.dbCanvas = this.dbCanvasRef.valueChanges();
 
       this.restoreCanvas();
@@ -48,6 +47,7 @@ export class FabricCanvasComponent implements AfterViewInit {
   ngAfterViewInit() {
     this.loadCanvas();
   }
+  signout(){}
   
   loadCanvas() {
     this.canvas = new fabric.Canvas('canvas', { isDrawingMode: true, width: document.documentElement.clientWidth, height: document.documentElement.clientHeight });
@@ -115,7 +115,7 @@ export class FabricCanvasComponent implements AfterViewInit {
   }
 
   share() {
-    this.db.database.ref().orderByChild('email').equalTo(this.shareEmail).once('value')
+    this.afDb.database.ref().orderByChild('email').equalTo(this.shareEmail).once('value')
     .then(res => {
       const users = res.val();
 
@@ -126,7 +126,7 @@ export class FabricCanvasComponent implements AfterViewInit {
 
       const userId = Object.keys(users)[0];
 
-      this.db.object(userId).update({ shared: [...(users[userId].shared || []), { uid: this.user?.uid, email: this.user?.email }] });
+      this.afDb.object(userId).update({ shared: [...(users[userId].shared || []), { uid: this.user?.uid, email: this.user?.email }] });
 
       this.shareEmail = null;
       this.shareEmailError = null;
@@ -134,7 +134,8 @@ export class FabricCanvasComponent implements AfterViewInit {
   }
 
   selectCanvas(id: string) {
-    this.pageService.navigateRoute('canvas/' + id);
+    //this.pageService.navigateRoute('canvas/' + id);
+    this.router.navigate(['canvas/' + id]);
   }
 
   ngOnDestroy() {

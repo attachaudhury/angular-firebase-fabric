@@ -1,6 +1,6 @@
 {
-  "name": "frontend",
-  "version": "0.0.0",
+  "name": "angular-firebase-fabric",
+  "version": "1.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -21,14 +21,10 @@
     "@angular/platform-browser-dynamic": "~12.0.3",
     "@angular/router": "~12.0.3",
     "@firebase/auth": "^0.18.3",
-    "@ng-bootstrap/ng-bootstrap": "^10.0.0",
     "@types/fabric": "^4.5.3",
-    "angular-bootstrap-md": "^12.0.0",
-    "bootstrap": "^5.1.3",
     "fabric": "^4.6.0",
     "firebase": "^9.1.2",
     "moment": "^2.29.1",
-    "ngx-toastr": "^14.1.3",
     "rxfire": "^6.0.0",
     "rxjs": "~6.6.0",
     "tslib": "^2.1.0",
