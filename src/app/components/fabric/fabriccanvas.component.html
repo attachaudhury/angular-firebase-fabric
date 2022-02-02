@@ -1,0 +1,30 @@
+<a class="navbar-brand me-3" *ngIf="userLogged | async as user">
+  <b class="email d-none d-md-inline">{{ user.email }}</b>
+  <img src="assets/imgs/logout.svg" class="icon ms-3" (click)="logout()">
+</a>
+<div class="page-container">
+  <app-navbar *ngIf="user"></app-navbar>
+  <ul class="list-group shared-canvas" *ngIf="sharedCanvas.length || (user && user.uid !== canvasId)">
+    <li class="list-group-item" [ngClass]="{'active': user.uid === canvasId}" (click)="selectCanvas(user.uid)">{{ user.email }}</li>
+    <li class="list-group-item" *ngFor="let user of sharedCanvas" [ngClass]="{'active': user.uid === canvasId}" (click)="selectCanvas(user.uid)">{{ user.email }}</li>
+  </ul>
+  
+  <canvas id="canvas"></canvas>
+  
+  <div class="list-group canvas-options">
+      <button type="button" class="list-group-item list-group-item-action" (click)="clearCanvas()">CLEAR</button>
+      <input type="color" class="form-control form-control-color color-input" [(ngModel)]="color" (change)="handleColor()">
+      <input class="form-control" type="file" (change)="handleImage($event)" accept="image/*">
+      <div class="row mt-2 mx-0" *ngIf="canvasId === user?.uid">
+        <div class="col-md-8 px-0">
+          <input type="text" class="form-control" placeholder="Email" aria-label="Email" aria-describedby="button-addon2" [(ngModel)]="shareEmail">
+        </div>
+        <div class="col-md-4 px-0 d-grid">
+          <button class="btn btn-info" type="button" id="button-addon2" (click)="share()" [disabled]="!shareEmail">SHARE</button>
+        </div>
+      </div>
+      <small *ngIf="shareEmailError" class="form-text text-danger">
+        {{ shareEmailError }}
+      </small>
+    </div>
+</div>
