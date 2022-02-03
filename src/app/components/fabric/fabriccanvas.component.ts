@@ -1,5 +1,8 @@
-import { AfterViewInit, Component } from '@angular/core';
-import { AngularFireDatabase, AngularFireObject } from '@angular/fire/compat/database';
+import { AfterViewInit, Component, OnDestroy, ViewChild } from '@angular/core';
+import {
+  AngularFireDatabase,
+  AngularFireObject,
+} from '@angular/fire/compat/database';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { fabric } from 'fabric';
 import { AuthService } from 'src/app/services/auth.service';
@@ -7,22 +10,18 @@ import { AuthService } from 'src/app/services/auth.service';
 @Component({
   selector: 'app-fabriccanvas',
   templateUrl: './fabriccanvas.component.html',
-  styleUrls: ['./fabriccanvas.component.scss']
+  styleUrls: ['./fabriccanvas.component.scss'],
 })
-export class FabricCanvasComponent implements AfterViewInit {
-
-  userLogged = this.authService.getUser();
-  color = '#000000';
+export class FabricCanvasComponent implements AfterViewInit, OnDestroy {
+  signedInUser = this.authService.getUser();
   canvas!: fabric.Canvas;
   savedCanvas!: string;
   dbCanvasRef!: AngularFireObject<any>;
   dbCanvas!: any;
   user!: firebase.default.User | null;
-  shareEmail!: string | null;
   subscriptions: any[] = [];
-  sharedCanvas: string[] = [];
   canvasId!: string;
-  shareEmailError!: string | null;
+  color = '#FF0000';
 
   constructor(
     public authService: AuthService,
@@ -30,69 +29,83 @@ export class FabricCanvasComponent implements AfterViewInit {
     public activatedRoute: ActivatedRoute,
     public router: Router
   ) {
-    const subscription = this.authService.getUser().subscribe(res => this.user = res);
+    const subscription = this.authService
+      .getUser()
+      .subscribe((res) => (this.user = res));
     this.subscriptions.push(subscription);
 
-    const routeSubscription = this.activatedRoute.params.subscribe((params: Params) => {
-      this.canvasId = params.id;
-      this.dbCanvasRef = this.afDb.object(this.canvasId);
-      this.dbCanvas = this.dbCanvasRef.valueChanges();
+    const routeSubscription = this.activatedRoute.params.subscribe(
+      (params: Params) => {
+        this.canvasId = params.id;
+        this.dbCanvasRef = this.afDb.object(this.canvasId);
+        this.dbCanvas = this.dbCanvasRef.valueChanges();
 
-      this.restoreCanvas();
-    });
+        this.restoreCanvas();
+      }
+    );
 
     this.subscriptions.push(routeSubscription);
   }
 
+  //angular lifecycle hooks
   ngAfterViewInit() {
-    this.loadCanvas();
+    this.canvas = new fabric.Canvas('canvas', {
+      isDrawingMode: true,
+      width: document.documentElement.clientWidth - 100,
+      height: document.documentElement.clientHeight,
+    });
+    this.canvas.on('mouse:up', (e) => this.saveCanvas());
+    this.canvas.on('mouse:down:before', (e) => {
+      if(e.target?.type == 'image' || e.target?.type == 'path') {
+        this.canvas.isDrawingMode = false;
+      }
+      else{
+        this.canvas.isDrawingMode = true;
+      }
+    });
   }
-  signout(){}
-  
-  loadCanvas() {
-    this.canvas = new fabric.Canvas('canvas', { isDrawingMode: true, width: document.documentElement.clientWidth, height: document.documentElement.clientHeight });
-    this.loadEvents();
-  }
-
-  loadEvents() {
-    this.canvas.on('mouse:up', e => this.saveCanvas());
-    this.canvas.on('mouse:down:before', e => this.canvas.isDrawingMode = (e.target?.type !== 'image'));
-  }
-
-  clearCanvas() {
-    this.canvas.clear();
-    this.saveCanvas();
-  }
-
-  handleColor() {
-    this.canvas.freeDrawingBrush.color = this.color;
+  ngOnDestroy() {
+    this.subscriptions.forEach((subscription) => subscription.unsubscribe());
   }
 
+
+  // canvas funntions
   saveCanvas() {
-    this.dbCanvasRef.update({ canvas: JSON.stringify(this.canvas.toJSON()), color: this.color, email: this.user?.email, shared: this.sharedCanvas });
+    this.dbCanvasRef.update({
+      canvas: JSON.stringify(this.canvas.toJSON()),
+      color: this.color,
+      email: this.user?.email,
+    });
   }
-
   restoreCanvas() {
     const subscription = this.dbCanvas.subscribe((res: any) => {
-      
       if (!res) {
         this.saveCanvas();
         return;
       }
-      
-      if (this.canvasId === this.user?.uid) this.sharedCanvas = res.shared || [];
-      
+
       this.color = res.color;
-      
-      this.canvas.loadFromJSON(JSON.parse(res.canvas), this.canvas.renderAll.bind(this.canvas));
-      
-      this.handleColor();
+
+      this.canvas.loadFromJSON(
+        JSON.parse(res.canvas),
+        this.canvas.renderAll.bind(this.canvas)
+      );
+
+      this.changeColor();
     });
 
     this.subscriptions.push(subscription);
   }
 
-  handleImage(event: Event) {
+  // canvas Controls handlers
+  clearCanvas() {
+    this.canvas.clear();
+    this.saveCanvas();
+  }
+  changeColor() {
+    this.canvas.freeDrawingBrush.color = this.color;
+  }
+  imageInputChanges(event: Event) {
     const input = event.target as HTMLInputElement;
 
     if (!input.files?.length) return;
@@ -100,46 +113,21 @@ export class FabricCanvasComponent implements AfterViewInit {
     const file: File = input.files[0];
     const reader = new FileReader();
 
-    reader.onload = ev => {
-
+    reader.onload = (ev) => {
       if (typeof reader.result !== 'string') return;
 
-      fabric.Image.fromURL(reader.result, img => {
+      fabric.Image.fromURL(reader.result, (img) => {
         this.canvas.add(img);
         this.canvas.centerObject(img);
         this.saveCanvas();
       });
-    }
+    };
 
     reader.readAsDataURL(file);
   }
 
-  share() {
-    this.afDb.database.ref().orderByChild('email').equalTo(this.shareEmail).once('value')
-    .then(res => {
-      const users = res.val();
-
-      if (!users) {
-        this.shareEmailError = 'User not found.';
-        return;
-      }
-
-      const userId = Object.keys(users)[0];
-
-      this.afDb.object(userId).update({ shared: [...(users[userId].shared || []), { uid: this.user?.uid, email: this.user?.email }] });
-
-      this.shareEmail = null;
-      this.shareEmailError = null;
-    }).catch(e => console.error(e));
+  //other functoins
+  signout() {
+    this.authService.signout();
   }
-
-  selectCanvas(id: string) {
-    //this.pageService.navigateRoute('canvas/' + id);
-    this.router.navigate(['canvas/' + id]);
-  }
-
-  ngOnDestroy() {
-    this.subscriptions.forEach(subscription => subscription.unsubscribe());
-  }
-
 }
