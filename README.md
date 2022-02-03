@@ -3,5 +3,5 @@
 ## Locally Running
    1. [](#1) Clone repo
    2. [](#2) Install dependencies `yarn` or `npm install` in the root of the repo   
-   3. [](#3) Start application by running command in terminal `ng serve`
+   3. [](#3) Start application by `ng serve`
    4. [](#4) Open browser and hit url `localhost:4200`
