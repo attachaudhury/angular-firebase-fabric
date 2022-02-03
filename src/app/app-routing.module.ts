@@ -6,7 +6,7 @@ import { SigninComponent } from './components/signin/signin.component';
 const routes: Routes = [
   { path: 'signin', component: SigninComponent },
   { path: 'fabric/:id', component: FabricCanvasComponent },
-  { path: '', redirectTo: 'signin', pathMatch: 'full' }
+  { path: '**', redirectTo: 'signin', pathMatch: 'full' }
 ];
 
 @NgModule({
