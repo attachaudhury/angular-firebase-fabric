@@ -10,7 +10,6 @@ import { AuthService } from 'src/app/services/auth.service';
 @Component({
   selector: 'app-fabriccanvas',
   templateUrl: './fabriccanvas.component.html',
-  styleUrls: ['./fabriccanvas.component.scss'],
 })
 export class FabricCanvasComponent implements AfterViewInit, OnDestroy {
   signedInUser = this.authService.getUser();
@@ -19,32 +18,31 @@ export class FabricCanvasComponent implements AfterViewInit, OnDestroy {
   dbCanvasRef!: AngularFireObject<any>;
   dbCanvas!: any;
   user!: firebase.default.User | null;
-  subscriptions: any[] = [];
-  canvasId!: string;
+  userSubscription: any;
+  routeSubscription: any;
+  canvasSubscription: any;
+  userId!: string;
   color = '#FF0000';
 
   constructor(
     public authService: AuthService,
-    public afDb: AngularFireDatabase,
+    public aFdB: AngularFireDatabase,
     public activatedRoute: ActivatedRoute,
     public router: Router
   ) {
-    const subscription = this.authService
+    this.userSubscription = this.authService
       .getUser()
       .subscribe((res) => (this.user = res));
-    this.subscriptions.push(subscription);
 
-    const routeSubscription = this.activatedRoute.params.subscribe(
+    this.routeSubscription = this.activatedRoute.params.subscribe(
       (params: Params) => {
-        this.canvasId = params.id;
-        this.dbCanvasRef = this.afDb.object(this.canvasId);
+        this.userId = params.id;
+        this.dbCanvasRef = this.aFdB.object(this.userId);
         this.dbCanvas = this.dbCanvasRef.valueChanges();
-
         this.restoreCanvas();
       }
     );
 
-    this.subscriptions.push(routeSubscription);
   }
 
   //angular lifecycle hooks
@@ -65,36 +63,31 @@ export class FabricCanvasComponent implements AfterViewInit, OnDestroy {
     });
   }
   ngOnDestroy() {
-    this.subscriptions.forEach((subscription) => subscription.unsubscribe());
+    this.userSubscription.unsubscribe()
+    this.routeSubscription.unsubscribe()
+    this.canvasSubscription.unsubscribe()
   }
 
-
-  // canvas funntions
+  // canvas functions
   saveCanvas() {
     this.dbCanvasRef.update({
       canvas: JSON.stringify(this.canvas.toJSON()),
-      color: this.color,
       email: this.user?.email,
     });
   }
   restoreCanvas() {
-    const subscription = this.dbCanvas.subscribe((res: any) => {
+    this.canvasSubscription = this.dbCanvas.subscribe((res: any) => {
       if (!res) {
         this.saveCanvas();
         return;
       }
-
-      this.color = res.color;
-
       this.canvas.loadFromJSON(
         JSON.parse(res.canvas),
         this.canvas.renderAll.bind(this.canvas)
       );
-
       this.changeColor();
     });
 
-    this.subscriptions.push(subscription);
   }
 
   // canvas Controls handlers
