@@ -1,9 +1,6 @@
 {
   "rules": {
-    ".read": true,
-    ".write": true,
-    ".indexOn": [
-      "email"
-    ]
+    ".read": "now < 1646334000000",  // 2022-3-4
+    ".write": "now < 1646334000000",  // 2022-3-4
   }
 }
